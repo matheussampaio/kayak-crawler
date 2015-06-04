@@ -10,7 +10,8 @@ describe('kayak crawler', function () {
         [], // 5th row
         []  // 6th row
     ];
-    function searchPrices (monthReturn, dayReturn) {
+
+    function initSearch (monthReturn, dayReturn) {
         it('should load the site', function () {
             browser.ignoreSynchronization = true;
             browser.driver.manage().deleteAllCookies();
@@ -20,13 +21,37 @@ describe('kayak crawler', function () {
         it('should put origin and destination', function () {
             element(by.id('origin')).sendKeys('  JPA').then(function () {
                 browser.sleep(1000);
-                element(by.id('destination')).sendKeys('CHI').sendKeys(protractor.Key.TAB);
+                element(by.id('destination')).sendKeys('CHI');
                 browser.sleep(1000);
             });
+
+            EC.textToBePresentInElement(element(by.id('origin')), 'JPA1');
+            EC.textToBePresentInElement(element(by.id('destination')), 'CHI');
+        });
+
+        it('should set flexible dates', function() {
+            element(by.id('moreOptionsLink')).click();
+
+            browser.sleep(1000);
+
+            element(by.id('datesPlusMinusThree-label')).click();
+
+            browser.sleep(1000);
         });
 
         it('should put depart date', function () {
-            element(by.css('.r9-datepicker-month-first')).
+            var datePicker = element(by.css('.r9-datepicker-month-first'));
+            var dateInput = element(by.id('travel_dates-start-wrapper'));
+
+            datePicker.isPresent().then(function (value) {
+                if (!value) {
+                    dateInput.click();
+                }
+            });
+
+            browser.wait(EC.visibilityOf(datePicker), 5000, "Datepicker not visibly");
+
+            datePicker.
                 element(by.css('.r9-datepicker-month-name')).
                 getText().then(function (text) {
                     var index = months.indexOf(text);
@@ -58,8 +83,32 @@ describe('kayak crawler', function () {
             browser.sleep(1000);
         });
 
+        repeatSearch(monthReturn, dayReturn);
+    }
+
+    function repeatSearch (monthReturn, dayReturn) {
         it('should put return date', function () {
-            element(by.css('.r9-datepicker-month-first')).
+            // var monthReturn = monthReturn ? monthReturn : 'Agosto';
+            // var dayReturn = dayReturn ? dayReturn : '24';
+            var datePicker = element(by.css('.r9-datepicker-month-first'));
+            var dateInput = element(by.id('travel_dates-end-wrapper'));
+            var searchAgainView = element(by.css('.inlineSearchAgainView'));
+
+            searchAgainView.isPresent().then(function (value) {
+                if (value) {
+                    searchAgainView.click();
+                }
+            });
+
+            datePicker.isPresent().then(function (value) {
+                if (!value) {
+                    dateInput.click();
+                }
+            });
+
+            browser.wait(EC.visibilityOf(datePicker), 5000, "Datepicker not visibly");
+
+            datePicker.
                 element(by.css('.r9-datepicker-month-name')).
                 getText().then(function (text) {
                     var index = months.indexOf(text);
@@ -91,18 +140,17 @@ describe('kayak crawler', function () {
             browser.sleep(1000);
         });
 
-        it('should set flexible dates', function() {
-            element(by.id('moreOptionsLink')).click();
-
-            browser.sleep(1000);
-
-            element(by.id('datesPlusMinusThree-label')).click();
-
-            browser.sleep(1000);
-        });
-
         it('should search the flights', function() {
-            element(by.id('fdimgbutton')).click();
+            var firstSearchButton = element(by.id('fdimgbutton'))
+
+            firstSearchButton.isPresent().then(function (value) {
+                if (value) {
+                    firstSearchButton.click();
+                } else {
+                    element.all(by.css('button.ui-button.finalFormField[type="submit"]')).first().click()
+                }
+            });
+
             browser.sleep(1000);
         });
 
@@ -128,9 +176,8 @@ describe('kayak crawler', function () {
         });
     }
 
-    searchPrices('Agosto', '12');
-    searchPrices('Agosto', '19');
-    searchPrices('Agosto', '26');
+    initSearch('Agosto', '12');
+    repeatSearch('Agosto', '19');
 
     it('should wait 5 seconds', function() {
         browser.sleep(5000);
