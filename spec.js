@@ -1,5 +1,8 @@
+var fs = require('fs');
+var _ = require('lodash');
+
 describe('kayak crawler', function () {
-    var months = ['Janeiro', 'Fevereiro', 'Maio', 'Abril', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    var mMonthsName = ['Janeiro', 'Fevereiro', 'Maio', 'Abril', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     var EC = protractor.ExpectedConditions;
     var mPrices = [
         [], // 0th row
@@ -19,14 +22,14 @@ describe('kayak crawler', function () {
         });
 
         it('should put origin and destination', function () {
-            element(by.id('origin')).sendKeys('  JPA').then(function () {
-                browser.sleep(1000);
-                element(by.id('destination')).sendKeys('CHI');
-                browser.sleep(1000);
-            });
+            var inputOrigin = element(by.id('origin'));
+            var inputDestination = element(by.id('destination'));
 
-            EC.textToBePresentInElement(element(by.id('origin')), 'JPA1');
-            EC.textToBePresentInElement(element(by.id('destination')), 'CHI');
+            inputOrigin.click().sendKeys('JPA');
+            browser.sleep(3000);
+
+            inputDestination.click().sendKeys('CHI');
+            browser.sleep(3000);
         });
 
         it('should set flexible dates', function() {
@@ -54,8 +57,8 @@ describe('kayak crawler', function () {
             datePicker.
                 element(by.css('.r9-datepicker-month-name')).
                 getText().then(function (text) {
-                    var index = months.indexOf(text);
-                    var targetMonth = months.indexOf('Agosto');
+                    var index = mMonthsName.indexOf(text);
+                    var targetMonth = mMonthsName.indexOf('Agosto');
 
                     if (index > targetMonth) {
                         for (var i = 0; i < index - targetMonth; i++) {
@@ -84,12 +87,13 @@ describe('kayak crawler', function () {
         });
 
         repeatSearch(monthReturn, dayReturn);
+
     }
 
     function repeatSearch (monthReturn, dayReturn) {
         it('should put return date', function () {
-            // var monthReturn = monthReturn ? monthReturn : 'Agosto';
-            // var dayReturn = dayReturn ? dayReturn : '24';
+            console.log('Searching on', monthReturn, dayReturn);
+
             var datePicker = element(by.css('.r9-datepicker-month-first'));
             var dateInput = element(by.id('travel_dates-end-wrapper'));
             var searchAgainView = element(by.css('.inlineSearchAgainView'));
@@ -111,8 +115,8 @@ describe('kayak crawler', function () {
             datePicker.
                 element(by.css('.r9-datepicker-month-name')).
                 getText().then(function (text) {
-                    var index = months.indexOf(text);
-                    var targetMonth = months.indexOf(monthReturn);
+                    var index = mMonthsName.indexOf(text);
+                    var targetMonth = mMonthsName.indexOf(monthReturn);
 
                     if (index > targetMonth) {
                         for (var i = 0; i < index - targetMonth; i++) {
@@ -156,9 +160,16 @@ describe('kayak crawler', function () {
 
         it('should wait to load flights', function() {
             var progress = element(by.id('progressDiv'));
-            var progressFinish = EC.invisibilityOf(progress);
 
-            browser.wait(progressFinish, 60000);
+            var popupAlert = element(by.css('.r9-dialog-closeButton.r9-icon-x'));
+
+            popupAlert.isPresent().then(function (value) {
+                if (value) {
+                    popupAlert.click();
+                }
+            });
+
+            browser.wait(EC.invisibilityOf(progress), 60000);
         });
 
         it('should copy the data', function() {
@@ -169,17 +180,41 @@ describe('kayak crawler', function () {
                 }).
                 then(function (prices) {
                     for (var i = 0; i < 7; i++) {
-                        mPrices[i].push(prices.slice(i * 7, (i * 7) + 7));
-                        console.log(mPrices[i]);
+                        mPrices[i] = mPrices[i].concat(prices.slice(i * 7, (i * 7) + 7));
                     };
                 });
         });
     }
 
     initSearch('Agosto', '12');
-    repeatSearch('Agosto', '19');
+
+    var d = new Date();
+
+    d.setMonth(7); // Agosto
+    d.setDate(12);
+
+    for (var i = 0; i < 20; i++) {
+        d.setDate(d.getDate() + 7);
+        repeatSearch(mMonthsName[d.getMonth() - 1], String(d.getDate()));
+    }
 
     it('should wait 5 seconds', function() {
+        var line = mPrices.map(function (row) {
+            return row.join('\t');
+        }).join('\n');
+
+        fs.writeFileSync('./output.txt', line);
+
+        var result = _.map(mPrices, function (row) {
+            return _.map(row, function (elem) {
+                return _.parseInt(elem.split(' ')[1]);
+            });
+        });
+
+        _.map(result, function (row) {
+            console.log(_.min(row));
+        });
+
         browser.sleep(5000);
     });
 });
