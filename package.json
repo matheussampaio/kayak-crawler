@@ -2,7 +2,6 @@
   "name": "flight-crawler",
   "version": "1.0.0",
   "description": "Just a Kayak flight crawler",
-  "main": "spec.js",
   "directories": {
     "test": "test"
   },
@@ -12,7 +11,10 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+        "serve": "node_modules/.bin/webdriver-manager start",
+    "start": "node_modules/.bin/protractor conf.js",
+    "postinstall": "node_modules/.bin/webdriver-manager update"
   },
   "repository": {
     "type": "git",
@@ -23,10 +25,5 @@
   "bugs": {
     "url": "https://github.com/matheussampaio/flightcrawler/issues"
   },
-  "homepage": "https://github.com/matheussampaio/flightcrawler",
-  "scripts": {
-    "serve": "node_modules/.bin/webdriver-manager start",
-    "start": "node_modules/.bin/protractor confs.js",
-    "postinstall": "node_modules/.bin/webdriver-manager update"
-  }
+  "homepage": "https://github.com/matheussampaio/flightcrawler"
 }
