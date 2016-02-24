@@ -1,29 +1,63 @@
 {
-  "name": "flight-crawler",
-  "version": "1.0.0",
+  "name": "kayak-crawler",
+  "version": "0.0.0-semantically-released",
   "description": "Just a Kayak flight crawler",
-  "directories": {
-    "test": "test"
+  "main": "dist/index.js",
+  "preferGlobal": true,
+  "bin": {
+    "kayakcrawler": "dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "cli",
+    "kayak",
+    "crawler"
+  ],
   "dependencies": {
-    "lodash": "^3.9.3",
-    "protractor": "^2.1.0"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-        "serve": "node_modules/.bin/webdriver-manager start",
-    "start": "node_modules/.bin/protractor conf.js",
-    "postinstall": "node_modules/.bin/webdriver-manager update"
+    "babel-polyfill": "6.5.0",
+    "chalk": "1.1.1",
+    "check-update": "0.0.8",
+    "co": "4.6.0",
+    "jquery": "2.2.1",
+    "lodash": "4.5.1",
+    "nightmare": "2.2.0",
+    "progress": "1.1.8",
+    "yargs": "4.1.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/matheussampaio/flightcrawler.git"
   },
-  "author": "Matheus Sampaio",
+  "author": "Matheus Sampaio <matheus@sampaio.us> (http://matheus.sampaio.us)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/matheussampaio/flightcrawler/issues"
   },
-  "homepage": "https://github.com/matheussampaio/flightcrawler"
+  "homepage": "https://github.com/matheussampaio/flightcrawler",
+  "devDependencies": {
+    "babel-core": "6.5.2",
+    "babel-preset-es2015": "6.5.0",
+    "del": "2.2.0",
+    "eslint-config-airbnb": "6.0.2",
+    "gulp": "3.9.1",
+    "gulp-babel": "6.1.2",
+    "gulp-changed": "1.3.0",
+    "gulp-eslint": "2.0.0",
+    "gulp-if": "2.0.0",
+    "gulp-load-plugins": "1.2.0",
+    "gulp-plumber": "1.1.0",
+    "gulp-util": "3.0.7",
+    "run-sequence": "1.1.5"
+  },
+  "babel": {
+    "presets": [
+      "es2015"
+    ]
+  },
+  "engines": {
+    "node": "5.1.0",
+    "npm": "3.5.0"
+  }
 }
