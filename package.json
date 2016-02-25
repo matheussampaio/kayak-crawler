@@ -20,6 +20,7 @@
     "chalk": "1.1.1",
     "check-update": "0.0.8",
     "co": "4.6.0",
+    "date-utils": "1.2.18",
     "jquery": "2.2.1",
     "lodash": "4.5.1",
     "nightmare": "2.2.0",
