@@ -36,8 +36,6 @@ function search({ fromAirport, toAirport, departDate, returnDate }) {
       // Load Page
       yield browser.goto(searchURL);
 
-      // yield closeDialog(browser);
-
       yield waitSearchFinish(browser);
 
       // Get Prices
@@ -89,21 +87,6 @@ function getPrices(browser) {
     return yield prices;
   });
 }
-
-//
-// function closeDialog(browser) {
-//   return co(function* () {
-//     // Check if must close Dialog
-//     const popupVisible = yield browser.visible(`r9-dialog-closeButton r9-icon-x  tighter`);
-//
-//     if (popupVisible) {
-//       console.log(`closing popup`);
-//       yield browser.click(`r9-dialog-closeButton r9-icon-x  tighter`);
-//     } else {
-//       console.log(`popup didn't show.`);
-//     }
-//   });
-// }
 
 function getSearchURL({ fromAirport, toAirport, departDate, returnDate }) {
   return [
