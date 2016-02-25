@@ -12,7 +12,7 @@ function main() {
   // always check for updates
   search({
     fromAirport: `CHI`,
-    toAirport: `JPA`,
+    toAirport: `SAO`,
     departDate: `2016-05-04`,
     returnDate: `2016-05-04`
   });
@@ -20,8 +20,7 @@ function main() {
 
 function search({ fromAirport, toAirport, departDate, returnDate }) {
   const browser = new Nightmare({
-    show: process.env.DEBUG,
-    dock: true
+    show: process.env.DEBUG
   });
 
   let lowerPriceValue = Number.MAX_VALUE;
