@@ -4,99 +4,82 @@ require(`babel-polyfill`);
 require(`date-utils`);
 
 import co from 'co';
-import Nightmare from 'nightmare';
+import Kayak from './kayak';
+
+const QUANTITY_MONTH_DEPART = 4;
+const QUANTITY_MONTH_RETURN = 40;
+const allPrices = [];
 
 main();
 
 function main() {
-  // always check for updates
   search({
     fromAirport: `CHI`,
-    toAirport: `SAO`,
+    toAirport: `JPA`,
     departDate: `2016-05-04`,
-    returnDate: `2016-05-04`
-  });
-}
-
-function search({ fromAirport, toAirport, departDate, returnDate }) {
-  const browser = new Nightmare({
-    show: process.env.DEBUG
-  });
-
-  let lowerPriceValue = Number.MAX_VALUE;
-  let lowerPriceDate = ``;
-
-  return co.wrap(function* submitGenerator() {
-    console.log(`Starting search...`);
-
-    for (let i = 0; i < 40; i++) {
-      returnDate = getNextDate(returnDate);
-      const searchURL = getSearchURL({ fromAirport, toAirport, departDate, returnDate });
-
-      // Load Page
-      yield browser.goto(searchURL);
-
-      yield waitSearchFinish(browser);
-
-      // Get Prices
-      const prices = yield getPrices(browser);
-
-      const temp = Math.min.apply(Math, prices);
-
-      console.log(`${returnDate}: $${temp}`);
-
-      if (temp <= lowerPriceValue) {
-        lowerPriceValue = temp;
-        lowerPriceDate = returnDate;
-      }
-    }
-
-    console.log(`\n\nThe best price is: ${lowerPriceDate} -> $${lowerPriceValue}`);
-
-    return yield browser.end();
-  })()
+    returnDate: `2016-05-11`
+  })
+  .then(() => {
+    const result = getBestPrice();
+    console.log([
+      `BEST PRICE: ${result.lowerPriceDepartDate} -> ${result.lowerPriceReturnDate}:`,
+      `  $${result.lowerPriceValue}`
+    ].join(``));
+  })
   .catch(error => {
     console.error(error.stack ? error.stack : error);
   });
 }
 
-function waitSearchFinish(browser) {
-  return co(function* () {
-    // Wait the search finish
-    let progressDiv = yield browser.visible(`#progressDiv`);
+function search({ fromAirport, toAirport, departDate, returnDate }) {
+  const kayak = new Kayak(fromAirport, toAirport);
 
-    while (progressDiv) {
-      yield browser.wait(1000);
-      progressDiv = yield browser.visible(`#progressDiv`);
+  return co(function* () {
+    for (let i = 0; i < QUANTITY_MONTH_DEPART; i++) {
+      const tempDepartDate = getNextDate(departDate, i);
+
+      for (let k = 0; k < QUANTITY_MONTH_RETURN - i; k++) {
+        const tempReturnDate = getNextDate(returnDate, k + i);
+
+        const prices = yield kayak.search(tempDepartDate, tempReturnDate);
+
+        allPrices.push({
+          prices,
+          departDate,
+          returnDate
+        });
+
+        const temp = Math.min.apply(Math, prices);
+        console.log(`${tempDepartDate}->${tempReturnDate}: $${temp}`);
+      }
     }
+
+    yield kayak.end();
   });
 }
 
-function getPrices(browser) {
-  return co(function* () {
-    yield browser.inject(`js`, `./node_modules/jquery/dist/jquery.min.js`);
+function getBestPrice() {
+  let lowerPriceValue = Number.MAX_VALUE;
+  let lowerPriceDepartDate = ``;
+  let lowerPriceReturnDate = ``;
 
-    const prices = yield browser.evaluate(() => {
-      return $(`#flexmatrixcontent .data > a`)
-        .text()
-        .trim()
-        .split(` `)
-        .map(elem => parseInt(elem.replace(`\n`, ``).replace(`$`, ``), 10));
-    });
+  for (let i = 0; i < allPrices.length; i++) {
+    const temp = Math.min.apply(Math, allPrices[i].prices);
 
-    return yield prices;
-  });
+    // console.log(`returnDate: ${allPrices[i].returnDate}`);
+    // console.log(`prices.length: ${allPrices[i].prices.length}`);
+    // console.log(`prices.min: ${temp}`);
+
+    if (temp <= lowerPriceValue) {
+      lowerPriceValue = temp;
+      lowerPriceDepartDate = allPrices[i].departDate;
+      lowerPriceReturnDate = allPrices[i].returnDate;
+    }
+  }
+
+  return { lowerPriceDepartDate, lowerPriceReturnDate, lowerPriceValue };
 }
 
-function getSearchURL({ fromAirport, toAirport, departDate, returnDate }) {
-  return [
-    `https://www.kayak.com/flights/`,
-    `${fromAirport},nearby-${toAirport},nearby/`,
-    `${departDate}-flexible/`,
-    `${returnDate}-flexible`
-  ].join(``);
-}
-
-function getNextDate(str) {
-  return new Date(str).add({ days: 8 }).toFormat(`YYYY-MM-DD`);
+function getNextDate(str, times = 1) {
+  return new Date(str).add({ days: (7 * times) + 1 }).toFormat(`YYYY-MM-DD`);
 }
