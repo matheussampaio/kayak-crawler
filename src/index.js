@@ -5,9 +5,10 @@ require(`date-utils`);
 
 import co from 'co';
 import Kayak from './kayak';
+import Email from './email';
 
-const QUANTITY_MONTH_DEPART = 4;
-const QUANTITY_MONTH_RETURN = 40;
+const QUANTITY_MONTH_DEPART = 2;
+const QUANTITY_MONTH_RETURN = 4;
 const allPrices = [];
 
 main();
@@ -21,10 +22,15 @@ function main() {
   })
   .then(() => {
     const result = getBestPrice();
-    console.log([
+    const text = [
       `BEST PRICE: ${result.lowerPriceDepartDate} -> ${result.lowerPriceReturnDate}:`,
       `  $${result.lowerPriceValue}`
-    ].join(``));
+    ].join(``);
+
+    console.log(text);
+
+    const email = new Email();
+    return email.send(text);
   })
   .catch(error => {
     console.error(error.stack ? error.stack : error);

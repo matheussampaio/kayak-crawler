@@ -36,17 +36,19 @@ export default class Kayak {
       yield vm.browser.goto(searchURL);
       yield vm.browser.wait(`#progressDiv`);
       yield vm.browser.inject(`js`, `./node_modules/jquery/dist/jquery.min.js`);
-      yield vm.browser.evaluateAsync((next) => {
-        waitProgress();
 
-        function waitProgress() {
-          if ($(`#progressDiv`).is(`:visible`)) {
-            setTimeout(waitProgress, 500);
-          } else {
-            next();
-          }
-        }
-      });
+      let count = 0;
+      let isVisible = true;
+      do {
+        count++;
+
+        yield vm.browser.wait(1000);
+
+        isVisible = yield vm.browser.evaluate(() => {
+          return $(`#progressDiv`).is(`:visible`);
+        });
+      } while (isVisible && count < 30);
+
       return yield vm.browser.evaluate(() => {
         const prices = $(`#flexmatrixcontent .data > a`)
           .text()

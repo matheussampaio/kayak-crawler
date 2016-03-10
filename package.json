@@ -10,6 +10,10 @@
   "files": [
     "dist"
   ],
+  "scripts": {
+    "postinstall": "gulp build",
+    "start": "node dist/index.js"
+  },
   "keywords": [
     "cli",
     "kayak",
@@ -25,6 +29,7 @@
     "lodash": "4.5.1",
     "nightmare": "2.2.0",
     "nightmare-evaluate-async": "0.1.4",
+    "nodemailer": "2.3.0",
     "progress": "1.1.8",
     "yargs": "4.1.0"
   },
