@@ -1,8 +1,6 @@
 import co from 'co';
 import Nightmare from 'Nightmare';
 
-require(`nightmare-evaluate-async`)(Nightmare);
-
 export default class Kayak {
   constructor(fromAirport, toAirport) {
     this.fromAirport = fromAirport;

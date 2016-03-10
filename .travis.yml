@@ -1,8 +1,5 @@
 sudo: false
 language: node_js
-cache:
-  directories:
-    - node_modules
 notifications:
   email: true
 node_js:
@@ -10,10 +7,6 @@ node_js:
 before_install:
   - npm i -g npm@^3.5.0
 before_script:
-  - npm prune
   - npm i -g gulp
 script:
-  - npm start
-branches:
-  except:
-    - "/^v\\d+\\.\\d+\\.\\d+$/"
+  - gulp build && npm start
