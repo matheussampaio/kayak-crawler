@@ -9,4 +9,8 @@ before_install:
 before_script:
   - npm i -g gulp
 script:
-  - gulp build && npm start
+  - gulp build
+  - node dist/index.js
+branches:
+  only:
+    - master
