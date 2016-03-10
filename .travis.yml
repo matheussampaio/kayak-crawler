@@ -10,7 +10,7 @@ before_script:
   - npm i -g gulp
 script:
   - gulp build
-  - travis_wait 30 node dist/index.js
+  - node dist/index.js
 branches:
   only:
     - master
