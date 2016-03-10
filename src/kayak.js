@@ -1,5 +1,5 @@
 import co from 'co';
-import Nightmare from 'Nightmare';
+import Nightmare from 'nightmare';
 
 export default class Kayak {
   constructor(fromAirport, toAirport) {
