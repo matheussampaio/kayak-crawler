@@ -14,6 +14,8 @@ const allPrices = [];
 main();
 
 function main() {
+  let executing = true;
+
   search({
     fromAirport: `CHI`,
     toAirport: `JPA`,
@@ -30,11 +32,28 @@ function main() {
     console.log(text);
 
     const email = new Email();
+    executing = false;
     return email.send(text);
   })
   .catch(error => {
+    executing = false;
     console.error(error.stack ? error.stack : error);
   });
+
+  wait();
+
+  function wait() {
+    console.log(`waiting...`);
+
+    setTimeout(() => {
+      if (executing) {
+        wait();
+      } else {
+        console.log(`finished!`);
+      }
+    }, 1000);
+
+  }
 }
 
 function search({ fromAirport, toAirport, departDate, returnDate }) {
