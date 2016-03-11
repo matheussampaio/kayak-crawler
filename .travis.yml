@@ -1,16 +1,24 @@
 sudo: false
 language: node_js
-notifications:
-  email: true
+cache:
+  directories:
+    - node_modules
 node_js:
   - '5.1.0'
 before_install:
   - npm i -g npm@^3.5.0
 before_script:
+  - npm prune
   - npm i -g gulp
 script:
   - gulp build
-  - node dist/index.js
+deploy:
+  provider: heroku
+  api_key: a0d003c6-a8d5-4dfc-b986-54d17b602cf7
+  skip_cleanup: true
+  buildpack: nodejs
+  app:
+    master: kayak-crawler
 branches:
   only:
     - master
