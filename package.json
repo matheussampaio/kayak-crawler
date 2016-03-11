@@ -11,6 +11,7 @@
     "dist"
   ],
   "scripts": {
+    "postinstall": "gulp build",
     "start": "node dist/index.js"
   },
   "keywords": [

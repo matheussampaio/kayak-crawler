@@ -14,6 +14,8 @@ const allPrices = [];
 main();
 
 function main() {
+  console.log(`starting search...`);
+
   search({
     fromAirport: `CHI`,
     toAirport: `JPA`,

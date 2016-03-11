@@ -6,8 +6,8 @@ export default class Kayak {
     this.fromAirport = fromAirport;
     this.toAirport = toAirport;
     this.browser = new Nightmare({
-      show: process.env.DEBUG,
-      dock: process.env.DEBUG,
+      // show: process.env.DEBUG,
+      // dock: process.env.DEBUG,
       waitTimeout: 20000
     });
   }
