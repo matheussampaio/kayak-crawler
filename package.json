@@ -23,7 +23,7 @@
     "babel-polyfill": "6.7.2",
     "co": "4.6.0",
     "date-utils": "1.2.19",
-    "jquery": "2.2.1",
+    "jquery": "2.2.2",
     "nightmare": "2.2.0",
     "nodemailer": "2.3.0",
     "yargs": "4.3.1"
