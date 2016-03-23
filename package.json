@@ -26,7 +26,7 @@
     "jquery": "2.2.2",
     "nightmare": "2.2.0",
     "nodemailer": "2.3.0",
-    "yargs": "4.3.1"
+    "yargs": "4.3.2"
   },
   "repository": {
     "type": "git",
