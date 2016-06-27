@@ -1,9 +1,11 @@
 import Nodemailer from 'nodemailer';
 
+import { email, password } from '../.env.json';
+
 export default class Email {
   constructor() {
-    this.user = process.env.USER_EMAIL;
-    this.password = process.env.USER_PASSWORD;
+    this.user = process.env.USER_EMAIL || email;
+    this.password = process.env.USER_PASSWORD || password;
 
     this.transporter = Nodemailer.createTransport(`smtps://${this.user}%40gmail.com:${this.password}@smtp.gmail.com`);
   }

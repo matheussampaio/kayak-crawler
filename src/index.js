@@ -8,19 +8,17 @@ import Kayak from './kayak';
 import Email from './email';
 
 const QUANTITY_MONTH_DEPART = 2;
-const QUANTITY_MONTH_RETURN = 4;
+const QUANTITY_MONTH_RETURN = 20;
 const allPrices = [];
 
 main();
 
 function main() {
-  console.log(`starting search...`);
-
   search({
     fromAirport: `CHI`,
     toAirport: `JPA`,
-    departDate: `2016-05-04`,
-    returnDate: `2016-05-11`
+    departDate: `2016-08-03`,
+    returnDate: `2016-08-10`
   })
   .then(() => {
     const result = getBestPrice();
