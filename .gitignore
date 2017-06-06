@@ -1,5 +1,6 @@
 node_modules/
-output.txt
+
 npm-debug.log
-dist/
+
+*.png
 .env

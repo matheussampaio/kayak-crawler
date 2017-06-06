@@ -12,17 +12,17 @@ const allPrices = [];
 main();
 
 async function main() {
-    const params = {
-        fromAirport: process.env.FROM_AIRPORT,
-        toAirport: process.env.TO_AIRPORT,
-        departDate: process.env.DEPART_DATE,
-        returnDate: process.env.RETURN_DATE
-    };
+    const fromAirport = process.env.FROM_AIRPORT;
+    const toAirport = process.env.TO_AIRPORT;
+    const departDate = process.env.DEPART_DATE;
+    const returnDate = process.env.RETURN_DATE;
 
-    console.log(`Searching flights from ${params.fromAirport} to ${params.toAirport}`);
+    const kayak = new Kayak(fromAirport, toAirport);
+
+    console.log(`Searching flights from ${fromAirport} to ${toAirport}`);
 
     try {
-        await search(params);
+        await search({ kayak, departDate, returnDate });
 
         const response = await fetch('http://api.fixer.io/latest?base=USD');
         const exchangesRates = await response.json();
@@ -30,31 +30,31 @@ async function main() {
         const result = getBestPrice();
 
         const url = Kayak.getUrl({
+            toAirport,
+            fromAirport,
             departDate: result.lowerPriceDepartDate,
-            returnDate: result.lowerPriceReturnDate,
-            fromAirport: params.fromAirport,
-            toAirport: params.toAirport
+            returnDate: result.lowerPriceReturnDate
         });
 
         const text = [
-            `BEST PRICE: ${result.lowerPriceDepartDate} -> ${result.lowerPriceReturnDate} [ ${url} ]:`,
-            `    USD$${result.lowerPriceValue.toFixed(2)}`,
+            `\n\nBEST PRICE: ${result.lowerPriceDepartDate} -> ${result.lowerPriceReturnDate} [ ${url} ]:`,
+            `    USD $ ${result.lowerPriceValue.toFixed(2)}`,
         ]
 
         if (process.env.CURRENCY && exchangesRates.rates[process.env.CURRENCY]) {
             const value = result.lowerPriceValue * exchangesRates.rates[process.env.CURRENCY];
-            text.push(`    ${process.env.CURRENCY}$${value.toFixed(2)}`);
+            text.push(`    ${process.env.CURRENCY} $ ${value.toFixed(2)}`);
         }
 
         console.log(text.join('\n'));
     } catch (error) {
         console.error(error.stack ? error.stack : error);
     }
+
+    return await kayak.end();
 }
 
-async function search({ fromAirport, toAirport, departDate, returnDate }) {
-    const kayak = new Kayak(fromAirport, toAirport);
-
+async function search({ kayak, departDate, returnDate }) {
     for (let i = 0; i < process.env.QUANTITY_MONTH_DEPART; i++) {
         const tempDepartDate = getNextDate(departDate, i);
 
@@ -71,11 +71,9 @@ async function search({ fromAirport, toAirport, departDate, returnDate }) {
 
             const temp = Math.min.apply(Math, prices);
 
-            console.log(`${tempDepartDate}->${tempReturnDate}: USD$${temp.toFixed(2)}`);
+            console.log(`${tempDepartDate} -> ${tempReturnDate}: USD$${temp.toFixed(2)}`);
         }
     }
-
-    return await kayak.end();
 }
 
 function getBestPrice() {
