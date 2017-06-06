@@ -90,8 +90,6 @@ class Kayak {
 
         const url = await this.browser.url();
 
-        console.log({ url });
-
         if (url.indexOf('bots') !== -1 || url.indexOf('security') !== -1) {
             await this.handleCaptcha();
         }
