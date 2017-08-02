@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/matheussampaio/kayak-crawler.svg?branch=master)](https://travis-ci.org/matheussampaio/kayak-crawler)
+
 # Kayak Crawler
 Search flight tickets at [Kayak](https://www.kayak.com).
 
