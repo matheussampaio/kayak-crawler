@@ -1,103 +1,135 @@
 #! /usr/bin/env node
 
 require('date-utils');
-require('dotenv').config();
 
+const _ = require('lodash');
 const fetch = require('node-fetch');
 
 const Kayak = require('./kayak');
+const CONFIG = require('./config');
 
 const allPrices = [];
 
-main();
+main().catch((error) => {
+    console.error(error);
+});
 
 async function main() {
-    const fromAirport = process.env.FROM_AIRPORT;
-    const toAirport = process.env.TO_AIRPORT;
-    const departDate = process.env.DEPART_DATE;
-    const returnDate = process.env.RETURN_DATE;
+    const kayak = new Kayak();
 
-    const kayak = new Kayak(fromAirport, toAirport);
+    CONFIG.RATE = await getCurrencyRate();
 
-    console.log(`Searching flights from ${fromAirport} to ${toAirport}`);
+    if (CONFIG.CURRENCY !== 'USD') {
+        console.log(`Rate ${CONFIG.CURRENCY} to USD: ${CONFIG.RATE}`);
+    }
+
+    console.log(`Searching flights from ${CONFIG.FROM_AIRPORT} to ${CONFIG.TO_AIRPORT}`);
 
     try {
-        await search({ kayak, departDate, returnDate });
+        await search({ kayak });
+    } catch (error) {
+        console.error(error.stack ? error.stack : error);
+    } finally {
+        await kayak.end();
+    }
 
+    const bestTicket = getLowerstPrice();
+
+    const url = Kayak.getUrl({
+        departDate: bestTicket.departDate,
+        returnDate: bestTicket.returnDate
+    });
+
+    const output = `
+
+BEST PRICE: ${bestTicket.departDate} -> ${bestTicket.returnDate} [ ${url} ]:
+    ${CONFIG.CURRENCY} $ ${bestTicket.price.toFixed(2)}
+`;
+
+    console.log(output);
+}
+
+async function getCurrencyRate() {
+    if (CONFIG.CURRENCY === 'USD') {
+        return 1;
+    }
+
+    try {
         const response = await fetch('http://api.fixer.io/latest?base=USD');
         const exchangesRates = await response.json();
 
-        const result = getBestPrice();
-
-        const url = Kayak.getUrl({
-            toAirport,
-            fromAirport,
-            departDate: result.lowerPriceDepartDate,
-            returnDate: result.lowerPriceReturnDate
-        });
-
-        const text = [
-            `\n\nBEST PRICE: ${result.lowerPriceDepartDate} -> ${result.lowerPriceReturnDate} [ ${url} ]:`,
-            `    USD $ ${result.lowerPriceValue.toFixed(2)}`,
-        ]
-
-        if (process.env.CURRENCY && exchangesRates.rates[process.env.CURRENCY]) {
-            const value = result.lowerPriceValue * exchangesRates.rates[process.env.CURRENCY];
-            text.push(`    ${process.env.CURRENCY} $ ${value.toFixed(2)}`);
+        if (exchangesRates != null
+            || exchangesRates.rates != null
+            || exchangesRates.rates[CONFIG.CURRENCY] != null) {
+            return exchangesRates.rates[CONFIG.CURRENCY];
         }
 
-        console.log(text.join('\n'));
     } catch (error) {
-        console.error(error.stack ? error.stack : error);
+        return 1;
     }
 
-    return await kayak.end();
+    return 1;
 }
 
-async function search({ kayak, departDate, returnDate }) {
-    for (let i = 0; i < process.env.QUANTITY_MONTH_DEPART; i++) {
-        const tempDepartDate = getNextDate(departDate, i);
+async function search({ kayak }) {
+    const dates = [];
 
-        for (let k = 0; k < process.env.QUANTITY_MONTH_RETURN - i; k++) {
-            const tempReturnDate = getNextDate(returnDate, k + i);
+    for (let i = 0; i < CONFIG.ITERATE_DEPARTURE_WEEK; i++) {
+        const departDate = getNextDate(CONFIG.DEPART_DATE, i);
 
-            const prices = await kayak.search(tempDepartDate, tempReturnDate);
+        for (let k = 0; k < CONFIG.ITERATE_RETURN_WEEK - i; k++) {
+            const returnDate = getNextDate(CONFIG.RETURN_DATE, k + i);
 
-            allPrices.push({
-                prices,
-                departDate,
-                returnDate
-            });
-
-            const temp = Math.min.apply(Math, prices);
-
-            console.log(`${tempDepartDate} -> ${tempReturnDate}: USD$${temp.toFixed(2)}`);
+            dates.push({ departDate, returnDate });
         }
     }
+
+    while (dates.length) {
+        const splice = dates.splice(0, CONFIG.CONCURRENCY);
+
+        const promises = splice.map(item => kayak.search(item.departDate, item.returnDate));
+
+        const tickets = await Promise.all(promises);
+
+        allPrices.push(...tickets);
+    }
+
+                //
+            // const prices = await kayak.search(tempDepartDate, tempReturnDate);
+            //
+            // allPrices.push({
+            //     prices,
+            //     departDate: tempDepartDate,
+            //     returnDate: tempReturnDate
+            // });
+            //
+            // const temp = Math.min.apply(Math, prices) * CONFIG.RATE;
+            //
+            // console.log(`${tempDepartDate} -> ${tempReturnDate}: ${CONFIG.CURRENCY} $${temp.toFixed(2)}`);
 }
 
-function getBestPrice() {
-    let lowerPriceValue = Number.MAX_VALUE;
-    let lowerPriceDepartDate = '';
-    let lowerPriceReturnDate = '';
+function getLowerstPrice() {
+    let best = {
+        price: Number.MAX_VALUE,
+        departDate: '',
+        returnDate: ''
+    };
 
     for (let i = 0; i < allPrices.length; i++) {
-        const temp = Math.min.apply(Math, allPrices[i].prices);
+        const price = Math.min.apply(Math, allPrices[i].prices);
 
-        if (temp <= lowerPriceValue) {
-            lowerPriceValue = temp;
-            lowerPriceDepartDate = allPrices[i].departDate;
-            lowerPriceReturnDate = allPrices[i].returnDate;
+        if (price <= best.price) {
+            best = {
+                price,
+                departDate: allPrices[i].departDate,
+                returnDate: allPrices[i].returnDate
+            };
         }
     }
 
-    return { lowerPriceDepartDate, lowerPriceReturnDate, lowerPriceValue };
+    return best;
 }
 
 function getNextDate(str, times = 1) {
-    return new Date(str)
-        .add({
-            days: (7 * times) + 1
-        })
-        .toFormat('YYYY-MM-DD');
+    return new Date(str).add({ days: (7 * times) + 1 }).toFormat('YYYY-MM-DD');
 }

@@ -14,8 +14,8 @@
   },
   "homepage": "https://github.com/matheussampaio/kayak-crawler",
   "engines": {
-    "node": "8.0.0",
-    "npm": "5.0.0"
+    "node": ">=8.2.1",
+    "npm": ">=5.3.0"
   },
   "keywords": [
     "cli",
@@ -32,17 +32,18 @@
     "start": "node src/index.js"
   },
   "dependencies": {
-    "date-utils": "^1.2.21",
-    "dotenv": "^4.0.0",
-    "nightmare": "^2.10.0",
-    "node-fetch": "^1.7.0",
-    "jquery": "^2.2.2"
+    "date-utils": "1.2.21",
+    "dotenv": "4.0.0",
+    "jquery": "2.2.2",
+    "lodash": "4.17.4",
+    "nightmare": "2.10.0",
+    "node-fetch": "1.7.0"
   },
   "devDependencies": {
-    "eslint": "^3.12.2",
-    "eslint-config-airbnb": "^13.0.0",
-    "eslint-plugin-import": "^2.2.0",
-    "eslint-plugin-jsx-a11y": "^2.2.3",
-    "eslint-plugin-react": "^6.8.0"
+    "eslint": "3.12.2",
+    "eslint-config-airbnb": "13.0.0",
+    "eslint-plugin-import": "2.2.0",
+    "eslint-plugin-jsx-a11y": "2.2.3",
+    "eslint-plugin-react": "6.8.0"
   }
 }

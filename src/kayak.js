@@ -1,33 +1,55 @@
+const _ = require('lodash');
 const Nightmare = require('nightmare');
 const debug = require('debug')('kayak');
 
+const CONFIG = require('./config');
+
 class Kayak {
-  constructor(fromAirport, toAirport) {
-    this.fromAirport = fromAirport;
-    this.toAirport = toAirport;
-    this.browser = Nightmare({
-        show: process.env.SHOW_BROWSER,
-        dock: process.env.SHOW_BROWSER,
-        webPreferences: {
-            webSecurity: false,
-            allowRunningInsecureContent: true
+    constructor() {
+        this.browsers = [];
+        this.freeBrowsers = {};
+        this.first = true;
+
+        for (let i = 0; i < CONFIG.CONCURRENCY; i++) {
+            this.browsers.push(Nightmare({
+                // waitTimeout: 1000 * 60,
+                show: CONFIG.SHOW_BROWSER,
+                dock: CONFIG.SHOW_BROWSER,
+                webPreferences: {
+                    webSecurity: false,
+                    allowRunningInsecureContent: true
+                }
+            }));
+
+            this.freeBrowsers[i] = true;
         }
-        // waitTimeout: 1000 * 60
-    });
-  }
+    }
 
-  end() {
-    return this.browser.end();
-  }
+    end() {
+        return Promise.all(this.browsers.map(browser => browser.end()));
+    }
 
-  static getUrl({ departDate, returnDate, fromAirport, toAirport }) {
-      return [
-          'https://www.kayak.com/flights/',
-          `${fromAirport},nearby-${toAirport},nearby/`,
-          `${departDate}-flexible/`,
-          `${returnDate}-flexible`
-      ].join('');
-  }
+    getFreeBrowser() {
+        for (let i = 0; i < this.browsers.length; i++) {
+            if (this.freeBrowsers[i]) {
+                this.freeBrowsers[i] = false;
+
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    static getUrl({ departDate, returnDate }) {
+        return [
+            'https://www.kayak.com/flights/',
+            `${CONFIG.FROM_AIRPORT},nearby-${CONFIG.TO_AIRPORT},nearby/`,
+            `${departDate}-flexible/`,
+            `${returnDate}-flexible`,
+            CONFIG.FILTER_AIRPORT ? `?fs=layoverair=-${CONFIG.FILTER_AIRPORT}` : ''
+        ].join('');
+    }
 
     async handleCaptcha() {
         debug('maybe google captcha?');
@@ -77,61 +99,77 @@ class Kayak {
         process.exit(1);
     }
 
-  async search(departDate, returnDate) {
-    const searchURL = Kayak.getUrl({
-        departDate,
-        returnDate,
-        fromAirport: this.fromAirport,
-        toAirport: this.toAirport
-    });
+    async search(departDate, returnDate) {
+        const searchURL = Kayak.getUrl({ departDate, returnDate });
 
-    try {
-        await this.browser.goto(searchURL);
+        const browserIndex = this.getFreeBrowser();
 
-        const url = await this.browser.url();
-
-        if (url.indexOf('bots') !== -1 || url.indexOf('security') !== -1) {
-            await this.handleCaptcha();
+        if (browserIndex === -1) {
+            return Promise.reject('No free browser');
         }
-    } catch (error) {
-        if (error.code === -3) {
-            await this.handleCaptcha();
-        }
-    }
 
+        const browser = this.browsers[browserIndex];
 
+        try {
+            await browser.goto(searchURL);
 
-    await this.browser.wait('.Common-Results-ProgressBar.Hidden');
+            const url = await browser.url();
 
-    const prices = await this.browser.evaluate(() => {
-        const docs = document.getElementsByClassName('lowest');
-
-        const prices = [];
-
-        for (let i = 0; i < docs.length; i++) {
-            const element = docs[i];
-
-            const txt = element.textContent
-                    .replace('R$', '')
-                    .replace('$', '')
-                    .trim();
-
-            const price = parseInt(txt, 10);
-
-            if (!price) {
-                return Promise.reject(`Failed to parse Integer: ${txt}`);
+            // check if we're blocked by captcha
+            if (url.indexOf('bots') !== -1 || url.indexOf('security') !== -1) {
+                await this.handleCaptcha();
             }
 
-            prices.push(price);
+        // something went wrong, maybe captcha?
+        } catch (error) {
+            if (error.code === -3) {
+                await this.handleCaptcha();
+            }
         }
 
-        return prices;
-    });
+        await browser.wait('.Common-Results-ProgressBar.Hidden');
 
-    await this.browser.wait(3000);
+        const rawPrices = await browser.evaluate(() => {
+            const docs = document.getElementsByClassName('lowest');
 
-    return Promise.resolve(prices);
-  }
+            const prices = [];
+
+            for (let i = 0; i < docs.length; i++) {
+                const element = docs[i];
+
+                const txt = element.textContent
+                        .replace('R$', '')
+                        .replace('$', '')
+                        .trim();
+
+                const price = parseInt(txt, 10);
+
+                if (!price) {
+                    return Promise.reject(`Failed to parse Integer: ${txt}`);
+                }
+
+                prices.push(price);
+            }
+
+            return prices;
+        });
+
+        const prices = rawPrices.map(price => (price * CONFIG.RATE).toFixed(2));
+
+        await browser.wait(3000);
+
+        this.freeBrowsers[browserIndex] = true;
+
+        if (this.first) {
+            this.first = false;
+        } else {
+            process.stdout.write(`, `);
+        }
+
+        process.stdout.write(`$${_.min(prices)}`);
+
+        return { departDate, returnDate, prices };
+    }
 }
 
 module.exports = Kayak;
